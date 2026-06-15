@@ -12,7 +12,7 @@ WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
 _model = None
 
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
-SARVAM_TRANSLATE_URL = os.getenv("SARVAM_SST_TRANSLATE_URL")
+SARVAM_TRANSLATE_STRING = os.getenv("SARVAM_SST_TRANSLATE_URL")
 SARVAM_MODEL = os.getenv("SARVAM_MODEL", "saaras:v3")
 
 
@@ -56,7 +56,11 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
         files = {"file": (os.path.basename(chunk_path, f, "audio/wav"))}
         data = {"model": SARVAM_MODEL, "with_diarization": "false"}
         response = requests.post(
-            SARVAM_TRANSLATE_URL, headers=headers, files=files, data=data, timeout=3000
+            SARVAM_TRANSLATE_STRING,
+            headers=headers,
+            files=files,
+            data=data,
+            timeout=3000,
         )
     response.raise_for_status()
 
@@ -95,7 +99,7 @@ def _send_to_sarvam(piece_path: str) -> str:
         files = {"file": (os.path.basename(piece_path), f, "audio/wav")}
         data = {"model": SARVAM_MODEL, "with_diarization": "false"}
         response = requests.post(
-            SARVAM_TRANSLATE_URL,
+            SARVAM_TRANSLATE_STRING,
             headers=headers,
             files=files,
             data=data,
@@ -118,7 +122,7 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
     if not SARVAM_API_KEY:
         raise RuntimeError("SARVAM_API_KEY is not present in the environment .env")
     audio = AudioSegment.from_wav(chunk_path)
-    piece_ms = SARVAM_TRANSLATE_URL * 1000
+    piece_ms = SARVAM_TRANSLATE_STRING * 1000
 
     full_text = ""
     total_pieces = (len(audio) + piece_ms - 1) // piece_ms

@@ -1,3 +1,5 @@
+import os
+
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -12,6 +14,20 @@ from core.extractor import (
 from core.rag_engine import ask_question, build_rag_chain
 
 load_dotenv()
+
+# ---------------------------------------------------------------------------
+# Streamlit Community Cloud doesn't read local .env files. Secrets are set
+# via the app's "Secrets" panel and exposed through st.secrets instead.
+# Since the rest of the codebase reads keys with os.getenv(...), mirror any
+# configured st.secrets into the process environment so nothing else needs
+# to change. This is a no-op when running locally with a .env file, since
+# st.secrets will simply be empty there.
+# ---------------------------------------------------------------------------
+try:
+    for _key, _value in st.secrets.items():
+        os.environ[_key] = str(_value)
+except Exception:
+    pass
 
 st.set_page_config(
     page_title="AI Video Assistant",
@@ -86,6 +102,13 @@ def run_pipeline_with_status(source: str, language: str) -> dict:
 # ---------------------------------------------------------------------------
 # Sidebar — input controls
 # ---------------------------------------------------------------------------
+# "Local file path" only makes sense when the app is running on the same
+# machine as the user (e.g. local dev). On a public/hosted deployment, the
+# server's filesystem isn't the visitor's filesystem, so that option is
+# hidden by default. Set ALLOW_LOCAL_FILE_INPUT=true in the environment
+# (e.g. in a local .env) to bring it back for local use.
+ALLOW_LOCAL_FILE_INPUT = os.getenv("ALLOW_LOCAL_FILE_INPUT", "false").lower() == "true"
+
 with st.sidebar:
     st.title("🎥 AI Video Assistant")
     st.caption(
@@ -94,9 +117,13 @@ with st.sidebar:
 
     st.divider()
 
-    source_type = st.radio(
-        "Source type", ["YouTube URL", "Local file path"], horizontal=False
-    )
+    if ALLOW_LOCAL_FILE_INPUT:
+        source_type = st.radio(
+            "Source type", ["YouTube URL", "Local file path"], horizontal=False
+        )
+    else:
+        source_type = "YouTube URL"
+        st.caption("Source: YouTube URL")
 
     if source_type == "YouTube URL":
         source_input = st.text_input(

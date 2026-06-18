@@ -4,7 +4,6 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 
-# Creating a dir which will store all the vector db data ->
 CHROMA_DIR = "vector_db"
 COLLECTION_NAME = "meeting_transcript"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
@@ -16,9 +15,8 @@ def get_embeddings():
     )
 
 
-# building vector store ->
 def build_vector_store(transcript: str) -> Chroma:
-    print(f"Building Vector Store")
+    print("Building Vector Store")
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_text(transcript)
     docs = [
@@ -28,7 +26,7 @@ def build_vector_store(transcript: str) -> Chroma:
     embeddings = get_embeddings()
     vector_store = Chroma.from_documents(
         documents=docs,
-        embeddings=embeddings,
+        embedding=embeddings,  # FIX 1: was 'embeddings=' but Chroma expects 'embedding='
         collection_name=COLLECTION_NAME,
         persist_directory=CHROMA_DIR,
     )
@@ -42,7 +40,7 @@ def load_vector_store() -> Chroma:
         embedding_function=embeddings,
         persist_directory=CHROMA_DIR,
     )
-    return load_vector_store
+    return vector_store  # FIX 2: was returning load_vector_store (the function itself) instead of vector_store
 
 
 def retriever(vector_store: Chroma, k: int = 4):

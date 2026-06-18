@@ -20,23 +20,86 @@ def format_docs(docs):
 
 def build_rag_chain(transcript: str):
     vector_store = build_vector_store(transcript)
-    retriever = retriever(vector_store, k=4)
+    retriever_obj = retriever(vector_store, k=4)
     llm = get_llm()
+
     prompt = ChatPromptTemplate.from_messages(
         [
             (
                 "system",
-                """You are an expert meeting assistant. Answer the user's question based ONLY on the meeting transcript provided below.
-                If the answer is not found in the context say:
-                "I could not find this information in the meeting transcript."
-                Always be concise and precise. If quoting someone, mention it clearly.
-                Context from meeting transcript: {context}
-                """,
+                """You are an expert meeting assistant.
+
+Answer the user's question based ONLY on the meeting transcript provided below.
+
+If the answer is not found in the context say:
+"I could not find this information in the meeting transcript."
+
+Always be concise and precise.
+
+Context from meeting transcript:
+{context}
+""",
             ),
             ("human", "{question}"),
         ]
     )
 
+    rag_chain = (
+        {
+            "context": retriever_obj | RunnableLambda(format_docs),
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
 
-# full LCEL rag chain =>
-rag_chain = {"context": retriever | RunnableLambda(format_docs)}
+    return rag_chain
+
+
+def load_rag_chain():
+    vector_store = (
+        load_vector_store()
+    )  # FIX 1: was calling load_vector_store() which was returning itself (bug in vector_store.py now fixed)
+    retriever_obj = retriever(vector_store, k=4)
+    llm = get_llm()
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                """You are an expert meeting assistant.
+
+Answer the user's question based ONLY on the meeting transcript provided below.
+
+If the answer is not found in the context say:
+"I could not find this information in the meeting transcript."
+
+Always be concise and precise.
+
+Context from meeting transcript:
+{context}
+""",
+            ),
+            ("human", "{question}"),
+        ]
+    )
+
+    rag_chain = (
+        {
+            "context": retriever_obj | RunnableLambda(format_docs),
+            "question": RunnablePassthrough(),
+        }
+        | prompt
+        | llm
+        | StrOutputParser()
+    )
+
+    return rag_chain
+
+
+def ask_question(rag_chain, question: str) -> str:
+    print("Question:", question)
+    answer = rag_chain.invoke(question)
+    print("Answer:", answer)
+    return answer

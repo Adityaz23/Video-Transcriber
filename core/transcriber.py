@@ -47,52 +47,35 @@ def transcribe_all(chunks: list, translate: bool = False) -> str:
     return full_transcript.strip()
 
 
-def transcribe_chunk_sarvam(chunk_path: str) -> str:
-    if not SARVAM_API_KEY:
-        raise RuntimeError(f"No sarvam api key found")
-    headers = {"api-subscription-key": SARVAM_API_KEY}
-
-    with open(chunk_path, "rb") as f:
-        files = {"file": (os.path.basename(chunk_path, f, "audio/wav"))}
-        data = {"model": SARVAM_MODEL, "with_diarization": "false"}
-        response = requests.post(
-            SARVAM_TRANSLATE_STRING,
-            headers=headers,
-            files=files,
-            data=data,
-            timeout=3000,
-        )
-    response.raise_for_status()
-
-    return response.json().get("transcript", "")
-
-
 def transcribe_with_sarvam(chunk_path: str, language: str = "english") -> str:
     """
-    Route one chunk to Whisper to Sarvam depending on language choice.
-    - english -> Whisper(local model)
-    - hinglish -> Sarvam(translates to English while trancribing)
+    Route one chunk to Whisper or Sarvam depending on language choice.
+    - english -> Whisper (local model)
+    - hinglish -> Sarvam (translates to English while transcribing)
     """
     if language.lower() == "hinglish":
         return transcribe_chunk_sarvam(chunk_path)
     return transcribe_chunk(chunk_path)
 
 
-def transcibe_all_chunk(chunks: list, language: str = "english") -> str:
+def transcribe_all_chunks(chunks: list, language: str = "english") -> str:
+    # FIX 1: was named 'transcibe_all_chunks' (typo)
     full_transcript = ""
     engine = "SARVAM AI" if language.lower() == "hinglish" else "Whisper"
-    print(f"Using{engine} for transcript")
+    print(f"Using {engine} for transcript")  # FIX 2: missing space
 
-    for i in chunks in enumerate(chunks):
+    for i, chunk in enumerate(chunks):  # FIX 3: was shadowing 'chunks' variable
         print(f"Transcribing chunk {i+1}/{len(chunks)}....")
-        text = transcribe_chunk(chunks, language=language)
+        text = transcribe_with_sarvam(
+            chunk, language=language
+        )  # FIX 4: was calling transcribe_chunk which doesn't accept language
         full_transcript += text + " "
-    print(f"Transcript complete")
+    print("Transcript complete")
     return full_transcript.strip()
 
 
 def _send_to_sarvam(piece_path: str) -> str:
-    """Send one ≤30s WAV file to Sarvam and return the English transcript."""
+    """Send one <=30s WAV file to Sarvam and return the English transcript."""
     headers = {"api-subscription-key": SARVAM_API_KEY}
 
     with open(piece_path, "rb") as f:
@@ -117,12 +100,14 @@ def _send_to_sarvam(piece_path: str) -> str:
 def transcribe_chunk_sarvam(chunk_path: str) -> str:
     """
     Sarvam sync API only accepts <=30s audio. We split the chunk into
-    25-second pieces, send each seprately, and join the transcripts.
+    25-second pieces, send each separately, and join the transcripts.
     """
     if not SARVAM_API_KEY:
         raise RuntimeError("SARVAM_API_KEY is not present in the environment .env")
     audio = AudioSegment.from_wav(chunk_path)
-    piece_ms = SARVAM_TRANSLATE_STRING * 1000
+    piece_ms = (
+        SARVAM_PIECE_SECONDS * 1000
+    )  # FIX 5: was SARVAM_TRANSLATE_STRING * 1000 (URL string, not a number)
 
     full_text = ""
     total_pieces = (len(audio) + piece_ms - 1) // piece_ms
@@ -134,8 +119,8 @@ def transcribe_chunk_sarvam(chunk_path: str) -> str:
 
         try:
             print(f"  -> Sarvam piece {i+1}/{total_pieces}...")
-            full_text += _send_to_sarvam(piece_path) + ""
+            full_text += _send_to_sarvam(piece_path) + " "
         finally:
             if os.path.exists(piece_path):
                 os.remove(piece_path)
-    return full_text.split()
+    return full_text.strip()  # FIX 6: was .split() which returns a list, not a string

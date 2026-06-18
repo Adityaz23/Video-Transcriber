@@ -90,13 +90,7 @@ ffmpeg -version
 pip install -r requirements.txt
 ```
 
-Additionally, since the code uses **Faster-Whisper** and **Groq** directly (rather than `openai-whisper`/Mistral, which are listed in `requirements.txt` but unused by the current code), install these as well:
-
-```bash
-pip install faster-whisper langchain-groq langchain-chroma
-```
-
-> **Note:** `requirements.txt` in this repo references `openai-whisper`, `torch`, and `langchain-mistralai`, which were used in earlier versions of the project. The current code (`core/transcriber.py`, `core/summarize.py`, `core/extractor.py`, `core/rag_engine.py`) has since moved to **`faster-whisper`** for transcription and **Groq** (`langchain-groq`) for all LLM calls. You may see unused dependencies install, or missing-package errors for `faster_whisper`, `langchain_groq`, and `langchain_chroma` — install them manually as shown above if that happens.
+`requirements.txt` is aligned with what the code actually imports: **Faster-Whisper** for local transcription and **Groq** (`langchain-groq`) for all LLM calls (summarization, extraction, RAG).
 
 ### 5. Set up environment variables
 
@@ -158,6 +152,27 @@ The script prints the title, summary, action items, key decisions, and open ques
 - The Chroma vector store persists to the local `vector_db/` directory and is rebuilt fresh each time a new transcript is processed.
 - Downloaded/converted audio is written to a local `downloads/` folder; both `downloads/` and `vector_db/` are excluded from git via `.gitignore`.
 
+## Deploying for free (Streamlit Community Cloud)
+
+This repo is set up to deploy on [Streamlit Community Cloud](https://share.streamlit.io) at no cost:
+
+1. Push this repo (including `packages.txt`, which installs FFmpeg) to GitHub.
+2. Go to [share.streamlit.io](https://share.streamlit.io), sign in with GitHub, and click **New app**.
+3. Select this repository, branch `main`, and set the main file path to `app.py`.
+4. Under **Advanced settings → Secrets**, add your API keys:
+   ```toml
+   GROQ_API_KEY = "your_groq_api_key"
+   SARVAM_API_KEY = "your_sarvam_api_key"
+   SARVAM_SST_TRANSLATE_URL = "https://api.sarvam.ai/speech-to-text-translate"
+   ```
+5. Click **Deploy**.
+
+Your app will be live at a public URL like `https://<your-app-name>.streamlit.app`.
+
+On a hosted deployment, only the **YouTube URL** input is shown by default (the "Local file path" option only makes sense when running on your own machine, since the server's filesystem isn't the visitor's). To re-enable local file input for local development, set `ALLOW_LOCAL_FILE_INPUT=true` in your `.env` file.
+
+**Free-tier limits to be aware of:** the app sleeps after ~15 minutes of inactivity (taking 30–60 seconds to wake on the next visit), and CPU/RAM is limited — stick to the `small` or smaller Faster-Whisper model (`WHISPER_MODEL=small` or `tiny`) to avoid running out of memory on longer videos.
+
 ## License
 
-I am the owner of this repository that is the license.
+I am the owner of this repository.

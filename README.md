@@ -173,6 +173,8 @@ On a hosted deployment, only the **YouTube URL** input is shown by default (the 
 
 **Free-tier limits to be aware of:** the app sleeps after ~15 minutes of inactivity (taking 30–60 seconds to wake on the next visit), and CPU/RAM is limited — stick to the `small` or smaller Faster-Whisper model (`WHISPER_MODEL=small` or `tiny`) to avoid running out of memory on longer videos.
 
+**Known issue — YouTube downloads on hosted/cloud deployments:** YouTube actively rate-limits and blocks downloads from datacenter IPs (the kind cloud hosts like Streamlit Cloud use), which can surface as `HTTP Error 403: Forbidden` even though the same URL works fine when run locally. This is a YouTube-side anti-bot measure, not a bug in this app, and there's no fully reliable free fix — `yt-dlp` and YouTube are in an ongoing cat-and-mouse cycle. Keeping `yt-dlp` updated to its latest version helps somewhat. Running the app locally (`streamlit run app.py` on your own machine) avoids the issue entirely, since your home IP isn't flagged the way cloud IPs are.
+
 ## License
 
-I am the owner of this repository.
+No license file is currently included in this repository.

@@ -1,13 +1,9 @@
+import os
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_groq import ChatGroq
-
-# text spliting -> To split the video in chunks ->
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-
-import os
 
 
 def get_llm():
@@ -33,31 +29,32 @@ def summarize(transcript: str) -> str:
         [
             (
                 "system",
-                """
-    You are a professional meeting analyst.
+                """You are a professional meeting analyst.
 
-    Summarize this transcript chunk.
+Summarize this transcript chunk.
 
-    Extract:
-    - Main discussion points
-    - Decisions made
-    - Action items
-    - Important deadlines
+Extract:
+- Main discussion points
+- Decisions made
+- Action items
+- Important deadlines
 
-    Use concise bullet points.
-    """,
+Use concise bullet points.
+""",
             ),
             ("human", "{text}"),
         ]
     )
-    map_chain = map_prompt | llm | StrOutputParser()  # this will summarize the chunks
+    map_chain = map_prompt | llm | StrOutputParser()
     chunks = split_transcript(transcript)
     chunk_summarize = [map_chain.invoke({"text": chunk}) for chunk in chunks]
     combined = "\n\n".join(chunk_summarize)
+
     combined_prompt = ChatPromptTemplate.from_messages(
         [
-            ("""
-You are a senior business analyst.
+            (
+                "system",  # FIX 1: was a bare string tuple ("system" role was missing), causing invalid prompt format
+                """You are a senior business analyst.
 
 Combine all partial summaries into a final report.
 
@@ -75,7 +72,8 @@ Structure:
 
 Use professional bullet points.
 Avoid repetition.
-"""),
+""",
+            ),
             ("human", "{text}"),
         ]
     )
@@ -98,7 +96,7 @@ def generate_title(transcript: str) -> str:
             [
                 (
                     "system",
-                    "Based on the meeting transccript, generate a short professional meeting title "
+                    "Based on the meeting transcript, generate a short professional meeting title "  # FIX 2: typo 'transccript'
                     "(max 8 words). Only return the title, nothing else.",
                 ),
                 ("human", "{text}"),

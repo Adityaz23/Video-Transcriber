@@ -1,3 +1,5 @@
 .env
 downloads/
 *.wav
+*.webm
+vector_db/

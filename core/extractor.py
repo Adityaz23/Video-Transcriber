@@ -1,4 +1,3 @@
-# Actionable items , decision and questions ->
 import os
 from langchain_groq import ChatGroq
 from langchain_core.prompts import ChatPromptTemplate
@@ -34,7 +33,7 @@ def extract_action_items(transcript: str) -> str:
         "extract all actions items. For each provide:\n"
         "- Task description\n"
         "- Owner (who is responsible)\n"
-        "- Deadline (if mentioned, else write 'Not specified)\n\n"
+        "- Deadline (if mentioned, else write 'Not specified')\n\n"  # FIX 1: missing closing quote on 'Not specified'
         "Format as a numbered list. If none found say 'No action items found'"
     )
     return chain.invoke(transcript)
@@ -43,16 +42,16 @@ def extract_action_items(transcript: str) -> str:
 def extract_key_decisions(transcript: str) -> str:
     chain = build_chain(
         "You are an expert meeting analyst. From the meeting transcript, "
-        "extract all key decisions made. Format as numbered list."
-        "If none found say 'No key decision found."
+        "extract all key decisions made. Format as numbered list. "  # FIX 2: missing space before closing quote
+        "If none found say 'No key decision found'."  # FIX 3: missing closing quote
     )
     return chain.invoke(transcript)
 
 
 def extract_question_decision(transcript: str) -> str:
     chain = build_chain(
-        "From the meeting transcipt, extract all the unresolved questions."
-        "or topics needing follow-up. Format as a numbered list."
-        "If none found say  'No open questions found'"
+        "From the meeting transcript, extract all the unresolved questions "  # FIX 4: typo 'transcipt'
+        "or topics needing follow-up. Format as a numbered list. "
+        "If none found say 'No open questions found'"
     )
     return chain.invoke(transcript)

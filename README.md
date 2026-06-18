@@ -160,4 +160,4 @@ The script prints the title, summary, action items, key decisions, and open ques
 
 ## License
 
-I am the onwer of this repository that is the license.
+I am the owner of this repository that is the license.

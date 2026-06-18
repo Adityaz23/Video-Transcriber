@@ -3,3 +3,5 @@ downloads/
 *.wav
 *.webm
 vector_db/
+__pycache__/
+*.pyc
